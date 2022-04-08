@@ -223,7 +223,7 @@ run_board <- function(
     output$answer_anova <- renderPlot({
       ans <- answers()
       req(nrow(ans) > 0 && sum(col_types(ans) == "numeric") > 0)
-      aov <- aov(pull(ans, input$attribute_selector) ~ Producto, data = ans)
+      aov <- aov(pull(ans, input$attribute_selector) ~ Producto+Valuador, data = ans)
       lsd <- LSD.test(aov, "Producto+Valuador", p.adj = "bonferroni")
       bar.group(lsd$groups, ylim = numeric_range, density = 4, border = "black", cex.names = 0.7)
     })
