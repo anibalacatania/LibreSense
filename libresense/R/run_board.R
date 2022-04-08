@@ -165,6 +165,7 @@ run_board <- function(
       ans <- select(ans, Producto, Valuador, where(is.numeric)) %>%
         as.data.frame()
       decat <- decat(ans, formul = "~Producto+Valuador", firstvar = 3, graph = FALSE)
+      options(ggrepel.max.overlaps = Inf)
       pca <- PCA(decat$adjmean, scale.unit = FALSE)
       wrap_plots(
         plot.PCA(pca, choix = "ind", axes = 1:2),
