@@ -39,7 +39,9 @@ Imports:
   shinythemes,
   tidyr,
   tidyselect
+Remotes:  
+  ricardo-bion/ggradar
 Suggests:
   crossdes
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.0

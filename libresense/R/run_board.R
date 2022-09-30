@@ -33,8 +33,7 @@
 #'
 #' @export
 #'
-run_board <- function(
-                      answers_dir = "Answers", dest_url = NULL, panel_url = NULL,
+run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL,
                       numeric_range = c(0, 10)) {
   # Set default host/port, if not provided as `dest_url`.
   host <- getOption("shiny.host", "127.0.0.1")
