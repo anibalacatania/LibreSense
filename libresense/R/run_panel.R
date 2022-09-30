@@ -126,7 +126,10 @@ run_panel <- function(products_file, attributes_file, design_file = NULL, answer
   # Set server side functionality.
   server <- function(input, output, session) {
     # Avoids the session to get disconnected.
-    observe(reactiveTimer(10000)())
+    observe({
+      reactiveTimer(10000)()
+      print(paste(username(), Sys.time()))
+    })
     ### User variables.
     username <- reactiveVal("") # Logged user.
     product <- reactiveVal("") # Current product.
