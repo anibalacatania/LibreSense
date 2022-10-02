@@ -15,6 +15,9 @@
 #' @param dest_url An optional character including the URL to use as destination host and port.
 #'   For example: 192.168.100.7:4000 .
 #' @param numeric_range A numeric vector indicating the range for numeric inputs.
+#' @param numeric_step A number indicating the minimum units that the slider changes while dragged.
+#'   A value of `0.01` (default) gives a continuous variable experience, while a value of `1` a
+#'   discrete variable.
 #'
 #' @importFrom dplyr `%>%` bind_rows filter filter_at left_join mutate_at pull tibble vars
 #' @importFrom glue glue
@@ -35,7 +38,7 @@
 #'
 run_panel <- function(products_file, attributes_file, design_file = NULL, answers_dir = "Answers",
                       product_name = "NombreProducto", randomized_attributes = FALSE,
-                      dest_url = NULL, numeric_range = c(0, 10)) {
+                      dest_url = NULL, numeric_range = c(0, 10), numeric_step = 0.01) {
 
   ### Input variables check.
 
@@ -146,7 +149,7 @@ run_panel <- function(products_file, attributes_file, design_file = NULL, answer
     # Prepare attributes inputs.
     output$attributes <- renderUI({
       attributes <- attributes()
-      map(seq_len(nrow(attributes)), ~ create_ui(attributes[.x, ], numeric_range))
+      map(seq_len(nrow(attributes)), ~ create_ui(attributes[.x, ], numeric_range, numeric_step))
     })
 
     # Disable everything if evaluation has finished.
@@ -264,17 +267,14 @@ username_modal <- function(session, fixed_panelists) {
 }
 
 # Creates the UI for each attribute.
-create_ui <- function(attribute, numeric_range) {
+create_ui <- function(attribute, numeric_range, numeric_step) {
   type <- trimws(strsplit(attribute$Valores, ":|,")[[1]])
   switch(type[[1]],
     Numeric = sliderInput(
       make.names(as.character(attribute$Nombre)),
       label = as.character(attribute$Nombre),
-      # label = fluidRow(
-      #   as.character(attribute$Nombre),
-      #   fluidRow(column(6, "Poco"), column(6, "Mucho"))
-      # ),
-      min = numeric_range[[1]], max = numeric_range[[2]], value = 0, step = .01, ticks = FALSE
+      min = numeric_range[[1]], max = numeric_range[[2]], value = 0, step = numeric_step,
+      ticks = FALSE
     ),
     Check = checkboxInput(
       make.names(as.character(attribute$Nombre)),

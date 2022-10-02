@@ -12,7 +12,8 @@ run_panel(
   product_name = "NombreProducto",
   randomized_attributes = FALSE,
   dest_url = NULL,
-  numeric_range = c(0, 10)
+  numeric_range = c(0, 10),
+  numeric_step = 0.01
 )
 }
 \arguments{
@@ -38,6 +39,10 @@ for each product evaluation. I.e., random experimental design for attributes.}
 For example: 192.168.100.7:4000 .}
 
 \item{numeric_range}{A numeric vector indicating the range for numeric inputs.}
+
+\item{numeric_step}{A number indicating the minimum units that the slider changes while dragged.
+A value of `0.01` (default) gives a continuous variable experience, while a value of `1` a
+discrete variable.}
 }
 \description{
 Sensory Board Panel
