@@ -21,9 +21,9 @@
 #' @importFrom purrr map
 #' @importFrom readr cols read_csv write_csv
 #' @importFrom shiny br em h1 h4 h5 h6 hr img
-#' @importFrom shiny actionButton checkboxInput fluidPage getQueryString modalDialog reactiveVal
-#' @importFrom shiny reactiveValuesToList removeModal renderUI selectInput selectizeInput shinyApp
-#' @importFrom shiny showModal showNotification sliderInput textInput
+#' @importFrom shiny actionButton checkboxInput fluidPage getQueryString modalDialog observe
+#' @importFrom shiny reactiveTimer reactiveVal reactiveValuesToList removeModal renderUI selectInput
+#' @importFrom shiny selectizeInput shinyApp showModal showNotification sliderInput textInput
 #' @importFrom shiny uiOutput updateCheckboxInput updateQueryString updateSelectInput
 #' @importFrom shiny updateSelectizeInput updateSliderInput updateTextInput
 #' @importFrom shinyjs disabled extendShinyjs js useShinyjs
@@ -33,8 +33,7 @@
 #'
 #' @export
 #'
-run_panel <- function(
-                      products_file, attributes_file, design_file = NULL, answers_dir = "Answers",
+run_panel <- function(products_file, attributes_file, design_file = NULL, answers_dir = "Answers",
                       product_name = "NombreProducto", randomized_attributes = FALSE,
                       dest_url = NULL, numeric_range = c(0, 10)) {
 
@@ -47,7 +46,7 @@ run_panel <- function(
   ### Global variables.
 
   # Set default host/port, if not provided as `dest_url`.
-  host <- getOption("shiny.host", "127.0.0.1")
+  host <- getOption("shiny.host", "0.0.0.0")
   port <- getOption("shiny.port")
   if (!is.null(dest_url)) {
     dest_url <- strsplit(dest_url, ":")[[1]]
@@ -91,8 +90,6 @@ run_panel <- function(
 
   ### UI.
 
-
-
   ui <- fluidPage(
     # Set a dark theme.
     theme = shinytheme("cyborg"),
@@ -125,6 +122,11 @@ run_panel <- function(
 
   # Set server side functionality.
   server <- function(input, output, session) {
+    # Avoids the session to get disconnected.
+    observe({
+      reactiveTimer(10000)()
+      print(paste(username(), Sys.time()))
+    })
     ### User variables.
     username <- reactiveVal("") # Logged user.
     product <- reactiveVal("") # Current product.
@@ -133,7 +135,7 @@ run_panel <- function(
     attributes <- reactiveVal({
       attrs <- read_csv(attributes_file, col_types = cols())
       if (randomized_attributes) {
-        attrs <- attrs[sample(nrow(attrs)),]
+        attrs <- attrs[sample(nrow(attrs)), ]
       }
       attrs
     })
@@ -227,7 +229,7 @@ run_panel <- function(
       js$scrolltop() # Scroll to top.
       # Resample attributes if required to.
       if (randomized_attributes) {
-        attributes(attributes[sample(nrow(attributes)),])
+        attributes(attributes[sample(nrow(attributes)), ])
       }
       showNotification("Valuación guardada", type = "message")
     })
@@ -264,8 +266,7 @@ username_modal <- function(session, fixed_panelists) {
 # Creates the UI for each attribute.
 create_ui <- function(attribute, numeric_range) {
   type <- trimws(strsplit(attribute$Valores, ":|,")[[1]])
-  switch(
-    type[[1]],
+  switch(type[[1]],
     Numeric = sliderInput(
       make.names(as.character(attribute$Nombre)),
       label = as.character(attribute$Nombre),
@@ -290,8 +291,7 @@ create_ui <- function(attribute, numeric_range) {
 # Resets the UI for each attribute.
 reset_ui <- function(attribute, numeric_range, session) {
   type <- trimws(strsplit(attribute$Valores, ":|,")[[1]])
-  switch(
-    type[[1]],
+  switch(type[[1]],
     Numeric = updateSliderInput(
       session, make.names(as.character(attribute$Nombre)),
       value = 0
@@ -323,5 +323,3 @@ assign_design <- function(design, username, products, answers_dir) {
     write_csv(glue("{answers_dir}/diseno.csv"))
   design
 }
-
-
