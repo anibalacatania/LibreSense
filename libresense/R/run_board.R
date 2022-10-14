@@ -102,6 +102,7 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
   # Load panelists answers.
   get_answers <- function() {
     files <- dir(answers_dir, full.names = TRUE)
+    # Only keep directories (remove `diseno.csv`).
     files <- files[dir.exists(files)]
     files <- dir(files, full.names = TRUE, recursive = TRUE)
     answers <- data.frame(
