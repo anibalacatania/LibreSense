@@ -8,7 +8,8 @@ run_board(
   answers_dir = "Answers",
   dest_url = NULL,
   panel_url = NULL,
-  numeric_range = c(0, 10)
+  numeric_range = c(0, 10),
+  refresh_seconds = 15
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ For example: 192.168.100.7:4001 .}
 For example: http://192.168.100.7:4000 .}
 
 \item{numeric_range}{A numeric vector indicating the range for numeric inputs.}
+
+\item{refresh_seconds}{A numeric indicating every how many seconds the board should refresh.}
 }
 \description{
 Sensory Board

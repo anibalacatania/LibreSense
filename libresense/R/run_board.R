@@ -6,11 +6,11 @@
 #' @param panel_url An optional character including the panel's URL to show it as a QR code.
 #'   For example: http://192.168.100.7:4000 .
 #' @param numeric_range A numeric vector indicating the range for numeric inputs.
+#' @param refresh_seconds A numeric indicating every how many seconds the board should refresh.
 #'
 #' @importFrom agricolae bar.group LSD.test
-#' @importFrom dplyr `%>%` arrange as_tibble bind_rows filter group_by group_map if_else mutate n
-#' @importFrom dplyr pull select slice_max summarise_if tibble
-#' @importFrom DT datatable dataTableOutput renderDataTable
+#' @importFrom dplyr `%>%` arrange bind_cols filter group_by group_map if_else mutate n
+#' @importFrom dplyr pull select slice_max summarise_if
 #' @importFrom FactoMineR PCA plot.PCA
 #' @importFrom ggplot2 aes coord_cartesian element_text facet_wrap geom_boxplot geom_text geom_tile
 #' @importFrom ggplot2 ggplot scale_color_gradient scale_size_area scale_y_continuous theme theme_bw
@@ -20,21 +20,21 @@
 #' @importFrom glue glue
 #' @importFrom grDevices colorRampPalette
 #' @importFrom patchwork wrap_plots
-#' @importFrom purrr map negate
 #' @importFrom qrcode qrcode_gen
 #' @importFrom readr cols read_csv
 #' @importFrom SensoMineR decat
 #' @importFrom shiny br em h1 h4 h5 h6 hr img
-#' @importFrom shiny checkboxInput column conditionalPanel fluidPage fluidRow mainPanel
-#' @importFrom shiny observeEvent plotOutput reactiveTimer reactiveVal renderPlot req selectInput
-#' @importFrom shiny shinyApp sidebarLayout sidebarPanel tabPanel tabsetPanel updateSelectInput
+#' @importFrom shiny checkboxInput column conditionalPanel fluidPage fluidRow mainPanel observeEvent
+#' @importFrom shiny plotOutput reactiveTimer reactiveVal renderPlot renderTable req selectInput
+#' @importFrom shiny shinyApp sidebarLayout sidebarPanel tableOutput tabPanel tabsetPanel
+#' @importFrom shiny updateSelectInput
 #' @importFrom stats heatmap median setNames
 #' @importFrom tidyr pivot_longer pivot_wider
 #'
 #' @export
 #'
 run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL,
-                      numeric_range = c(0, 10)) {
+                      numeric_range = c(0, 10), refresh_seconds = 15) {
   # Set default host/port, if not provided as `dest_url`.
   host <- getOption("shiny.host", "127.0.0.1")
   port <- getOption("shiny.port")
@@ -66,7 +66,7 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
             "Datos",
             h1("Datos"),
             br(),
-            DT::dataTableOutput("data")
+            tableOutput("data")
           ),
           tabPanel(
             "ACP",
@@ -101,33 +101,21 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
 
   # Load panelists answers.
   get_answers <- function() {
-    names <- dir(glue("{answers_dir}/"))
-    req(length(names) > 0)
-    answers <- map(names, function(user) {
-      map(
-        dir(glue("{answers_dir}/{user}")),
-        ~ tibble(
-          Producto = sub("\\.csv$", "", .x),
-          Valuador = user,
-          read_csv(glue("{answers_dir}/{user}/{.x}"), col_types = cols())
-        )
-      )
-    }) %>%
-      bind_rows()
+    files <- dir(answers_dir, full.names = TRUE)
+    # Only keep directories (remove `diseno.csv`).
+    files <- files[dir.exists(files)]
+    files <- dir(files, full.names = TRUE, recursive = TRUE)
+    answers <- data.frame(
+      Producto = sub("\\.csv$", "", basename(files)),
+      Valuador = basename(dirname(files))
+    ) %>%
+      bind_cols(read_csv(files, col_types = cols()))
     req(nrow(answers) > 0)
     arrange(answers, Producto, Valuador)
   }
 
   # Get column types from a data frame.
   col_types <- function(dataset) sapply(dataset, class)
-
-  # Render table as datatable, with default options.
-  render_dtable <- function(table) {
-    DT::datatable(
-      table,
-      options = list(paging = FALSE, searching = FALSE, info = FALSE), rownames = FALSE
-    )
-  }
 
   # Generates the QR code plot from the `text`.
   qr_gen <- function(text) {
@@ -147,20 +135,23 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
   server <- function(input, output, session) {
     answers <- reactiveVal()
 
-    # Refresh answers every 5 seconds.
-    timer <- reactiveTimer(1000 * 5)
+    # Refresh answers every `refresh_seconds` seconds.
+    timer <- reactiveTimer(1000 * refresh_seconds)
     observeEvent(timer(), answers(get_answers()))
 
     # Show QR code.
     output$qrcode <- renderPlot(qr_gen(panel_url))
 
     # Show panel table.
-    output$data <- DT::renderDataTable(render_dtable(answers()))
+    output$data <- renderTable(answers())
 
     # Create answers radar plot.
     output$answer_acp <- renderPlot({
       ans <- answers()
-      req(nrow(ans) > 0 && sum(col_types(ans) == "numeric") > 0)
+      req(
+        nrow(ans) > 0, length(unique(ans$Producto)) > 1, length(unique(ans$Valuador)) > 1,
+        sum(col_types(ans) == "numeric") > 0
+      )
       ans <- select(ans, Producto, Valuador, where(is.numeric)) %>%
         as.data.frame()
       decat <- decat(ans, formul = "~Producto+Valuador", firstvar = 3, graph = FALSE)
@@ -221,7 +212,10 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
     # Selected answer anova.
     output$answer_anova <- renderPlot({
       ans <- answers()
-      req(nrow(ans) > 0 && sum(col_types(ans) == "numeric") > 0)
+      req(
+        nrow(ans) > 0, length(unique(ans$Producto)) > 1, length(unique(ans$Valuador)) > 1,
+        sum(col_types(ans) == "numeric") > 0
+      )
       aov <- aov(pull(ans, input$attribute_selector) ~ Producto, data = ans)
       lsd <- LSD.test(aov, "Producto", p.adj = "bonferroni")
       bar.group(lsd$groups, ylim = numeric_range, density = 4, border = "black", cex.names = 0.7)
