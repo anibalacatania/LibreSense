@@ -22,7 +22,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
   agricolae,
-  DT,
   dplyr,
   FactoMineR,
   ggplot2,

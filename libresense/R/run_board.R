@@ -9,7 +9,7 @@
 #' @param refresh_seconds A numeric indicating every how many seconds the board should refresh.
 #'
 #' @importFrom agricolae bar.group LSD.test
-#' @importFrom dplyr `%>%` arrange bind_cols distinct filter group_by group_map if_else mutate n
+#' @importFrom dplyr `%>%` arrange bind_cols filter group_by group_map if_else mutate n
 #' @importFrom dplyr pull select slice_max summarise_if
 #' @importFrom FactoMineR PCA plot.PCA
 #' @importFrom ggplot2 aes coord_cartesian element_text facet_wrap geom_boxplot geom_text geom_tile
@@ -147,7 +147,10 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
     # Create answers radar plot.
     output$answer_acp <- renderPlot({
       ans <- answers()
-      req(nrow(distinct(ans, Producto, Valuador)) > 1 && sum(col_types(ans) == "numeric") > 0)
+      req(
+        nrow(ans) > 0, length(unique(ans$Producto)) > 1, length(unique(ans$Valuador)) > 1,
+        sum(col_types(ans) == "numeric") > 0
+      )
       ans <- select(ans, Producto, Valuador, where(is.numeric)) %>%
         as.data.frame()
       decat <- decat(ans, formul = "~Producto+Valuador", firstvar = 3, graph = FALSE)
@@ -208,7 +211,10 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
     # Selected answer anova.
     output$answer_anova <- renderPlot({
       ans <- answers()
-      req(nrow(distinct(ans, Producto, Valuador)) > 1 && sum(col_types(ans) == "numeric") > 0)
+      req(
+        nrow(ans) > 0, length(unique(ans$Producto)) > 1, length(unique(ans$Valuador)) > 1,
+        sum(col_types(ans) == "numeric") > 0
+      )
       aov <- aov(pull(ans, input$attribute_selector) ~ Producto, data = ans)
       lsd <- LSD.test(aov, "Producto", p.adj = "bonferroni")
       bar.group(lsd$groups, ylim = numeric_range, density = 4, border = "black", cex.names = 0.7)
