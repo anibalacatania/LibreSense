@@ -17,7 +17,9 @@ run_panel(
 )
 }
 \arguments{
-\item{products_file}{A character path to the csv file containing the products to evaluate.}
+\item{products_file}{A character path to the csv file containing the products to evaluate.
+The first column of the file must be the products names. It can have a second column named
+"CodigoProducto" for being shown to the panel, see `product_name` parameter.}
 
 \item{attributes_file}{A character path to the csv file containing the attributes to evaluate.}
 

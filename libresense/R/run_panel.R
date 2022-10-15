@@ -1,6 +1,8 @@
 #' Sensory Board Panel
 #'
 #' @param products_file A character path to the csv file containing the products to evaluate.
+#'   The first column of the file must be the products names. It can have a second column named
+#'   "CodigoProducto" for being shown to the panel, see `product_name` parameter.
 #' @param attributes_file A character path to the csv file containing the attributes to evaluate.
 #' @param design_file A character path to the csv file containing the experimental design.
 #' @param answers_dir A character path to the folder in which to save user responses (if it does not
@@ -74,12 +76,17 @@ run_panel <- function(products_file, attributes_file, design_file = NULL, answer
   if (!"NombreProducto" %in% colnames(design)) {
     design <- mutate(design, NombreProducto = products[Muestra, 1, drop = TRUE])
   }
+  # Prioritize CodigoProducto from design, then from products, then create values if not present.
   if (!"CodigoProducto" %in% colnames(design)) {
-    samples_code <- tibble(
-      Muestra = unique(design$Muestra),
-      CodigoProducto = paste0("P", sample(1000, nrow(products)) - 1)
-    )
-    design <- left_join(design, samples_code, by = "Muestra")
+    if ("CodigoProducto" %in% colnames(products)) {
+      design <- mutate(design, CodigoProducto = products[Muestra, "CodigoProducto", drop = TRUE])
+    } else {
+      samples_code <- tibble(
+        Muestra = unique(design$Muestra),
+        CodigoProducto = paste0("P", sample(1000, nrow(products)) - 1)
+      )
+      design <- left_join(design, samples_code, by = "Muestra")
+    }
   }
   if (!"CodigoMuestra" %in% colnames(design)) {
     design <- mutate(design, CodigoMuestra = paste0("M", sample(1000, nrow(design)) - 1))
