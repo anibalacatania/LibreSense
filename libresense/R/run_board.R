@@ -20,7 +20,7 @@
 #' @importFrom glue glue
 #' @importFrom grDevices colorRampPalette
 #' @importFrom patchwork wrap_plots
-#' @importFrom qrcode qrcode_gen
+#' @importFrom qrcode qrcode
 #' @importFrom readr cols read_csv
 #' @importFrom SensoMineR decat
 #' @importFrom shiny br em h1 h4 h5 h6 hr img
@@ -122,7 +122,7 @@ run_board <- function(answers_dir = "Answers", dest_url = NULL, panel_url = NULL
     if (!require("qrcode") | is.null(text)) {
       return(invisible())
     }
-    qr_matrix <- qrcode_gen(text, dataOutput = TRUE, plotQRcode = FALSE)
+    qr_matrix <- qrcode(text, dataOutput = TRUE, plotQRcode = FALSE)
     qr_matrix <- as.data.frame.table(qr_matrix)
     qr_matrix[1:2] <- lapply(qr_matrix[1:2], as.numeric)
     qr_matrix <- qr_matrix[qr_matrix$Freq == 1, ]
